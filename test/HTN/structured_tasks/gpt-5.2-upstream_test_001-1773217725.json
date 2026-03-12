@@ -1,0 +1,392 @@
+{
+  "task_id": "task_1773273600",
+  "original_instruction": "绕同一圆心水平画圆在竖直画圆，半径为10，其他参数自定，安全合理即可（都允许你自己决定）",
+  "subtasks": [
+    {
+      "subtask_id": "sub_001",
+      "type": "takeoff",
+      "params": {
+        "height": "15米[自拟]"
+      },
+      "dependency": [],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_002",
+      "type": "hover",
+      "params": {
+        "duration": "5秒[自拟]"
+      },
+      "dependency": [
+        "sub_001"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_003",
+      "type": "goto",
+      "params": {
+        "target": "点(95.89,12.86)[自拟：水平圆起点，圆心(85.89,12.86)半径10]",
+        "height": "15米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_002"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_004",
+      "type": "goto",
+      "params": {
+        "target": "点(94.55,17.86)[自拟：水平圆]",
+        "height": "15米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_003"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_005",
+      "type": "goto",
+      "params": {
+        "target": "点(90.89,21.52)[自拟：水平圆]",
+        "height": "15米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_004"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_006",
+      "type": "goto",
+      "params": {
+        "target": "点(85.89,22.86)[自拟：水平圆]",
+        "height": "15米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_005"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_007",
+      "type": "goto",
+      "params": {
+        "target": "点(80.89,21.52)[自拟：水平圆]",
+        "height": "15米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_006"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_008",
+      "type": "goto",
+      "params": {
+        "target": "点(77.23,17.86)[自拟：水平圆]",
+        "height": "15米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_007"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_009",
+      "type": "goto",
+      "params": {
+        "target": "点(75.89,12.86)[自拟：水平圆]",
+        "height": "15米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_008"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_010",
+      "type": "goto",
+      "params": {
+        "target": "点(77.23,7.86)[自拟：水平圆]",
+        "height": "15米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_009"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_011",
+      "type": "goto",
+      "params": {
+        "target": "点(80.89,4.20)[自拟：水平圆]",
+        "height": "15米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_010"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_012",
+      "type": "goto",
+      "params": {
+        "target": "点(85.89,2.86)[自拟：水平圆]",
+        "height": "15米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_011"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_013",
+      "type": "goto",
+      "params": {
+        "target": "点(90.89,4.20)[自拟：水平圆]",
+        "height": "15米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_012"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_014",
+      "type": "goto",
+      "params": {
+        "target": "点(94.55,7.86)[自拟：水平圆]",
+        "height": "15米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_013"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_015",
+      "type": "goto",
+      "params": {
+        "target": "点(95.89,12.86)[自拟：水平圆闭合回到起点]",
+        "height": "15米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_014"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_016",
+      "type": "hover",
+      "params": {
+        "duration": "3秒[自拟]"
+      },
+      "dependency": [
+        "sub_015"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_017",
+      "type": "goto",
+      "params": {
+        "target": "点(94.55,12.86)[自拟：竖直圆(X-Z平面)，Y固定=12.86]",
+        "height": "20米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_016"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_018",
+      "type": "goto",
+      "params": {
+        "target": "点(90.89,12.86)[自拟：竖直圆(X-Z平面)]",
+        "height": "23.66米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_017"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_019",
+      "type": "goto",
+      "params": {
+        "target": "点(85.89,12.86)[自拟：竖直圆(X-Z平面)]",
+        "height": "25米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_018"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_020",
+      "type": "goto",
+      "params": {
+        "target": "点(80.89,12.86)[自拟：竖直圆(X-Z平面)]",
+        "height": "23.66米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_019"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_021",
+      "type": "goto",
+      "params": {
+        "target": "点(77.23,12.86)[自拟：竖直圆(X-Z平面)]",
+        "height": "20米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_020"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_022",
+      "type": "goto",
+      "params": {
+        "target": "点(75.89,12.86)[自拟：竖直圆(X-Z平面)]",
+        "height": "15米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_021"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_023",
+      "type": "goto",
+      "params": {
+        "target": "点(77.23,12.86)[自拟：竖直圆(X-Z平面)]",
+        "height": "10米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_022"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_024",
+      "type": "goto",
+      "params": {
+        "target": "点(80.89,12.86)[自拟：竖直圆(X-Z平面)]",
+        "height": "6.34米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_023"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_025",
+      "type": "goto",
+      "params": {
+        "target": "点(85.89,12.86)[自拟：竖直圆(X-Z平面)]",
+        "height": "5米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_024"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_026",
+      "type": "goto",
+      "params": {
+        "target": "点(90.89,12.86)[自拟：竖直圆(X-Z平面)]",
+        "height": "6.34米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_025"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_027",
+      "type": "goto",
+      "params": {
+        "target": "点(94.55,12.86)[自拟：竖直圆(X-Z平面)]",
+        "height": "10米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_026"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_028",
+      "type": "goto",
+      "params": {
+        "target": "点(95.89,12.86)[自拟：竖直圆闭合回到起点]",
+        "height": "15米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_027"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_029",
+      "type": "return_to_launch",
+      "params": {},
+      "dependency": [
+        "sub_028"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_030",
+      "type": "land",
+      "params": {},
+      "dependency": [
+        "sub_029"
+      ],
+      "priority": 1
+    }
+  ],
+  "ambiguity_check": "无歧义（用户允许自拟参数；默认以当前(X,Y)=(85.89,12.86)为同一圆心；水平圆高度15米；竖直圆取X-Z平面且Y固定=12.86）",
+  "safety_check": "无风险（全程高度5–25米≤50米且>0.1米；速度2m/s；通过多航点近似画圆并设置悬停缓冲）",
+  "self_defined_params": [
+    "圆心:(85.89,12.86)[自拟]",
+    "半径:10米（用户指定）",
+    "水平圆高度:15米[自拟]",
+    "竖直圆平面:X-Z平面(Y固定=12.86)[自拟]",
+    "速度:2m/s[自拟]",
+    "起飞高度:15米[自拟]",
+    "悬停时长:5秒与3秒[自拟]",
+    "每圈航点数:12个+闭合点[自拟]"
+  ]
+}

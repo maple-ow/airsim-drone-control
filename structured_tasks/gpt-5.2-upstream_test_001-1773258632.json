@@ -1,0 +1,171 @@
+{
+  "task_id": "task_20260311_dual_uav_turbine_inspection",
+  "original_instruction": "双机协同：uav1起飞到15米巡检turbine1，uav2起飞到20米巡检turbine2，完成后一起返回降落",
+  "subtasks": [
+    {
+      "subtask_id": "sub_001",
+      "type": "takeoff",
+      "params": {
+        "height": 15,
+        "_target_uavs": [
+          "uav1"
+        ]
+      },
+      "dependencies": [],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_002",
+      "type": "takeoff",
+      "params": {
+        "height": 20,
+        "_target_uavs": [
+          "uav2"
+        ]
+      },
+      "dependencies": [],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_003",
+      "type": "goto",
+      "params": {
+        "target": "turbine1",
+        "height": 15,
+        "offset": "水平正前方10米[自拟]",
+        "_target_uavs": [
+          "uav1"
+        ]
+      },
+      "dependencies": [
+        "sub_001"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_004",
+      "type": "hover",
+      "params": {
+        "duration": 2,
+        "_target_uavs": [
+          "uav1"
+        ]
+      },
+      "dependencies": [
+        "sub_003"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_005",
+      "type": "take_photo",
+      "params": {
+        "photo_name": "uav1_turbine1_inspection[自拟]",
+        "_target_uavs": [
+          "uav1"
+        ]
+      },
+      "dependencies": [
+        "sub_004"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_006",
+      "type": "goto",
+      "params": {
+        "target": "turbine2",
+        "height": 20,
+        "offset": "水平正前方10米[自拟]",
+        "_target_uavs": [
+          "uav2"
+        ]
+      },
+      "dependencies": [
+        "sub_002"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_007",
+      "type": "hover",
+      "params": {
+        "duration": 2,
+        "_target_uavs": [
+          "uav2"
+        ]
+      },
+      "dependencies": [
+        "sub_006"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_008",
+      "type": "take_photo",
+      "params": {
+        "photo_name": "uav2_turbine2_inspection[自拟]",
+        "_target_uavs": [
+          "uav2"
+        ]
+      },
+      "dependencies": [
+        "sub_007"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_009",
+      "type": "return_to_launch",
+      "params": {
+        "height": 15,
+        "_target_uavs": [
+          "uav1"
+        ]
+      },
+      "dependencies": [
+        "sub_005",
+        "sub_008"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_010",
+      "type": "return_to_launch",
+      "params": {
+        "height": 20,
+        "_target_uavs": [
+          "uav2"
+        ]
+      },
+      "dependencies": [
+        "sub_005",
+        "sub_008"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_011",
+      "type": "land",
+      "params": {
+        "_target_uavs": [
+          "uav1",
+          "uav2"
+        ]
+      },
+      "dependencies": [
+        "sub_009",
+        "sub_010"
+      ],
+      "priority": 1
+    }
+  ],
+  "ambiguity_check": "无歧义",
+  "safety_check": "无风险",
+  "self_defined_params": [
+    "offset:水平正前方10米[自拟]",
+    "duration:2秒[自拟]",
+    "photo_name:uav1_turbine1_inspection[自拟]",
+    "photo_name:uav2_turbine2_inspection[自拟]"
+  ]
+}

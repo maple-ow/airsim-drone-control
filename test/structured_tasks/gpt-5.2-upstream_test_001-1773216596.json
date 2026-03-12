@@ -1,0 +1,263 @@
+{
+  "task_id": "task_20260311_001",
+  "original_instruction": "绕同一圆心水平画圆在竖直画圆，半径为10，其他参数自定，安全合理即可\n\n【当前环境/无人机状态】\n- 当前位置 (X, Y, Z): (85.89, 12.86, -2.04)\n- 当前朝向 (Yaw): 2.1 度",
+  "subtasks": [
+    {
+      "subtask_id": "sub_001",
+      "type": "takeoff",
+      "params": {
+        "height": ""
+      },
+      "dependency": [],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_002",
+      "type": "goto",
+      "params": {
+        "target": "圆心定位点（以当前起飞点/当前位置投影为圆心）",
+        "height": ""
+      },
+      "dependency": [
+        "sub_001"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_003",
+      "type": "goto",
+      "params": {
+        "target": "水平圆起点：圆心东侧半径10m圆周点",
+        "height": ""
+      },
+      "dependency": [
+        "sub_002"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_004",
+      "type": "goto",
+      "params": {
+        "target": "水平圆1/8：圆心东北方向半径10m圆周点",
+        "height": ""
+      },
+      "dependency": [
+        "sub_003"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_005",
+      "type": "goto",
+      "params": {
+        "target": "水平圆2/8：圆心北侧半径10m圆周点",
+        "height": ""
+      },
+      "dependency": [
+        "sub_004"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_006",
+      "type": "goto",
+      "params": {
+        "target": "水平圆3/8：圆心西北方向半径10m圆周点",
+        "height": ""
+      },
+      "dependency": [
+        "sub_005"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_007",
+      "type": "goto",
+      "params": {
+        "target": "水平圆4/8：圆心西侧半径10m圆周点",
+        "height": ""
+      },
+      "dependency": [
+        "sub_006"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_008",
+      "type": "goto",
+      "params": {
+        "target": "水平圆5/8：圆心西南方向半径10m圆周点",
+        "height": ""
+      },
+      "dependency": [
+        "sub_007"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_009",
+      "type": "goto",
+      "params": {
+        "target": "水平圆6/8：圆心南侧半径10m圆周点",
+        "height": ""
+      },
+      "dependency": [
+        "sub_008"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_010",
+      "type": "goto",
+      "params": {
+        "target": "水平圆7/8：圆心东南方向半径10m圆周点",
+        "height": ""
+      },
+      "dependency": [
+        "sub_009"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_011",
+      "type": "goto",
+      "params": {
+        "target": "水平圆闭合：回到水平圆起点（圆心东侧半径10m圆周点）",
+        "height": ""
+      },
+      "dependency": [
+        "sub_010"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_012",
+      "type": "goto",
+      "params": {
+        "target": "竖直圆起点：与水平圆起点同位置（圆心东侧半径10m点），作为竖直圆0度点",
+        "height": ""
+      },
+      "dependency": [
+        "sub_011"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_013",
+      "type": "goto",
+      "params": {
+        "target": "竖直圆1/8：在选定竖直平面内（建议东西向-高度平面），圆心上方偏东圆周点（半径10m）",
+        "height": ""
+      },
+      "dependency": [
+        "sub_012"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_014",
+      "type": "goto",
+      "params": {
+        "target": "竖直圆2/8：竖直圆顶部点（圆心正上方半径10m）",
+        "height": ""
+      },
+      "dependency": [
+        "sub_013"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_015",
+      "type": "goto",
+      "params": {
+        "target": "竖直圆3/8：圆心上方偏西圆周点（半径10m）",
+        "height": ""
+      },
+      "dependency": [
+        "sub_014"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_016",
+      "type": "goto",
+      "params": {
+        "target": "竖直圆4/8：圆心西侧半径10m点（与圆心等高）",
+        "height": ""
+      },
+      "dependency": [
+        "sub_015"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_017",
+      "type": "goto",
+      "params": {
+        "target": "竖直圆5/8：圆心下方偏西圆周点（半径10m，需确保不低于安全高度/不触地）",
+        "height": ""
+      },
+      "dependency": [
+        "sub_016"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_018",
+      "type": "goto",
+      "params": {
+        "target": "竖直圆6/8：竖直圆底部点（圆心正下方半径10m，需确保不低于安全高度/不触地）",
+        "height": ""
+      },
+      "dependency": [
+        "sub_017"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_019",
+      "type": "goto",
+      "params": {
+        "target": "竖直圆7/8：圆心下方偏东圆周点（半径10m，需确保不低于安全高度/不触地）",
+        "height": ""
+      },
+      "dependency": [
+        "sub_018"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_020",
+      "type": "goto",
+      "params": {
+        "target": "竖直圆闭合：回到竖直圆起点（圆心东侧半径10m点）",
+        "height": ""
+      },
+      "dependency": [
+        "sub_019"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_021",
+      "type": "return_to_launch",
+      "params": {},
+      "dependency": [
+        "sub_020"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_022",
+      "type": "land",
+      "params": {},
+      "dependency": [
+        "sub_021"
+      ],
+      "priority": 1
+    }
+  ],
+  "ambiguity_check": "需澄清：1）“同一圆心”具体取哪一点作为圆心：当前起飞点、当前位置、还是指定坐标/目标点？2）竖直画圆的竖直平面方向希望是东西向（XZ平面）还是南北向（YZ平面），或以当前航向为基准的竖直平面？3）水平圆/竖直圆的飞行高度基准与限制：期望的安全高度范围/最低离地高度是多少（以避免竖直圆底部触地）？4）坐标系Z为-2.04的含义（NED/ENU/相对高度）需要确认，以便下游正确补全height。",
+  "safety_check": "存在风险：竖直圆包含“圆心下方半径10m”的轨迹点，若圆心高度不足或Z轴定义不明，可能导致触地/撞障；当前Z为-2.04显示高度参考可能异常（如NED坐标），在未确认坐标系与最低离地高度前不宜执行。另需确认周边无障碍物/禁飞区后再飞。"
+}

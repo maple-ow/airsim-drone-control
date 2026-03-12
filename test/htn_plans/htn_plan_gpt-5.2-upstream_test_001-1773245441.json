@@ -1,0 +1,303 @@
+{
+  "uav_1": [
+    {
+      "task_id": "sub_001",
+      "type": "takeoff",
+      "params": {
+        "height": "15米[自拟]",
+        "_upstream_type": "takeoff"
+      },
+      "dependencies": [],
+      "assigned_uav": "uav_1"
+    },
+    {
+      "task_id": "sub_002",
+      "type": "goto",
+      "params": {
+        "target": "起飞点正上方圆心(0,0,15)[自拟]",
+        "height": "15米[自拟]",
+        "speed": "2m/s[自拟]",
+        "_upstream_type": "goto"
+      },
+      "dependencies": [
+        "sub_001"
+      ],
+      "assigned_uav": "uav_1"
+    },
+    {
+      "task_id": "sub_003",
+      "type": "fly_path",
+      "params": {
+        "path_type": "circle",
+        "center": [
+          0,
+          0,
+          15
+        ],
+        "radius": "6米[自拟]",
+        "num_points": "36[自拟]",
+        "height": "15米[自拟]",
+        "_upstream_type": "fly_path"
+      },
+      "dependencies": [
+        "sub_002"
+      ],
+      "assigned_uav": "uav_1"
+    },
+    {
+      "task_id": "sub_004",
+      "type": "hover",
+      "params": {
+        "duration": "5秒[自拟]",
+        "_upstream_type": "hover"
+      },
+      "dependencies": [
+        "sub_003"
+      ],
+      "assigned_uav": "uav_1"
+    },
+    {
+      "task_id": "sub_005",
+      "type": "fly_path",
+      "params": {
+        "path_type": "custom",
+        "center": [
+          0,
+          0,
+          15
+        ],
+        "radius": "5米[自拟]",
+        "num_points": "37[自拟]",
+        "height": "15米[自拟]",
+        "waypoints": [
+          [
+            5.0,
+            0.0,
+            15.0
+          ],
+          [
+            4.92,
+            0.0,
+            15.87
+          ],
+          [
+            4.7,
+            0.0,
+            16.71
+          ],
+          [
+            4.33,
+            0.0,
+            17.5
+          ],
+          [
+            3.83,
+            0.0,
+            18.21
+          ],
+          [
+            3.21,
+            0.0,
+            18.83
+          ],
+          [
+            2.5,
+            0.0,
+            19.33
+          ],
+          [
+            1.71,
+            0.0,
+            19.7
+          ],
+          [
+            0.87,
+            0.0,
+            19.92
+          ],
+          [
+            0.0,
+            0.0,
+            20.0
+          ],
+          [
+            -0.87,
+            0.0,
+            19.92
+          ],
+          [
+            -1.71,
+            0.0,
+            19.7
+          ],
+          [
+            -2.5,
+            0.0,
+            19.33
+          ],
+          [
+            -3.21,
+            0.0,
+            18.83
+          ],
+          [
+            -3.83,
+            0.0,
+            18.21
+          ],
+          [
+            -4.33,
+            0.0,
+            17.5
+          ],
+          [
+            -4.7,
+            0.0,
+            16.71
+          ],
+          [
+            -4.92,
+            0.0,
+            15.87
+          ],
+          [
+            -5.0,
+            0.0,
+            15.0
+          ],
+          [
+            -4.92,
+            0.0,
+            14.13
+          ],
+          [
+            -4.7,
+            0.0,
+            13.29
+          ],
+          [
+            -4.33,
+            0.0,
+            12.5
+          ],
+          [
+            -3.83,
+            0.0,
+            11.79
+          ],
+          [
+            -3.21,
+            0.0,
+            11.17
+          ],
+          [
+            -2.5,
+            0.0,
+            10.67
+          ],
+          [
+            -1.71,
+            0.0,
+            10.3
+          ],
+          [
+            -0.87,
+            0.0,
+            10.08
+          ],
+          [
+            0.0,
+            0.0,
+            10.0
+          ],
+          [
+            0.87,
+            0.0,
+            10.08
+          ],
+          [
+            1.71,
+            0.0,
+            10.3
+          ],
+          [
+            2.5,
+            0.0,
+            10.67
+          ],
+          [
+            3.21,
+            0.0,
+            11.17
+          ],
+          [
+            3.83,
+            0.0,
+            11.79
+          ],
+          [
+            4.33,
+            0.0,
+            12.5
+          ],
+          [
+            4.7,
+            0.0,
+            13.29
+          ],
+          [
+            4.92,
+            0.0,
+            14.13
+          ],
+          [
+            5.0,
+            0.0,
+            15.0
+          ]
+        ],
+        "_upstream_type": "fly_path"
+      },
+      "dependencies": [
+        "sub_004"
+      ],
+      "assigned_uav": "uav_1"
+    },
+    {
+      "task_id": "sub_006",
+      "type": "hover",
+      "params": {
+        "duration": "5秒[自拟]",
+        "_upstream_type": "hover"
+      },
+      "dependencies": [
+        "sub_005"
+      ],
+      "assigned_uav": "uav_1"
+    },
+    {
+      "task_id": "sub_007",
+      "type": "return_to_launch",
+      "params": {
+        "_upstream_type": "return_to_launch"
+      },
+      "dependencies": [
+        "sub_006"
+      ],
+      "assigned_uav": "uav_1"
+    },
+    {
+      "task_id": "sub_008",
+      "type": "land",
+      "params": {
+        "_upstream_type": "land"
+      },
+      "dependencies": [
+        "sub_007"
+      ],
+      "assigned_uav": "uav_1"
+    }
+  ],
+  "uav_2": [],
+  "uav_3": []
+}

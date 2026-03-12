@@ -134,7 +134,7 @@ def get_drone_status_text(aw):
 
 def main():
     parser = argparse.ArgumentParser(description="无人机自然语言控制台 (完整版)")
-    parser.add_argument("--prompt", type=str, default="prompts/airsim_empty.txt", help="用户提示词文件")
+    parser.add_argument("--prompt", type=str, default="system_prompts/airsim_empty.txt", help="用户提示词文件")
     parser.add_argument("--sysprompt", type=str, default="system_prompts/airsim_chinese.txt", help="系统提示词文件")
     parser.add_argument("--testname", type=str, default="test_001", help="测试名称")
     args = parser.parse_args()

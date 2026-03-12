@@ -1,0 +1,309 @@
+{
+  "task_id": "task_20260311_000001",
+  "original_instruction": "分别在水平面和竖平面画圆，相关参数由你决定，保证安全和合理性即可",
+  "subtasks": [
+    {
+      "subtask_id": "sub_001",
+      "type": "takeoff",
+      "params": {
+        "height": "15米[自拟]"
+      },
+      "dependency": [],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_002",
+      "type": "goto",
+      "params": {
+        "target": "起飞点正上方圆心(0,0,15)[自拟]",
+        "height": "15米[自拟]",
+        "speed": "2m/s[自拟]"
+      },
+      "dependency": [
+        "sub_001"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_003",
+      "type": "fly_path",
+      "params": {
+        "path_type": "circle",
+        "center": [
+          0,
+          0,
+          15
+        ],
+        "radius": "6米[自拟]",
+        "num_points": "36[自拟]",
+        "height": "15米[自拟]"
+      },
+      "dependency": [
+        "sub_002"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_004",
+      "type": "hover",
+      "params": {
+        "duration": "5秒[自拟]"
+      },
+      "dependency": [
+        "sub_003"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_005",
+      "type": "fly_path",
+      "params": {
+        "path_type": "custom",
+        "center": [
+          0,
+          0,
+          15
+        ],
+        "radius": "5米[自拟]",
+        "num_points": "37[自拟]",
+        "height": "15米[自拟]",
+        "waypoints": [
+          [
+            5.0,
+            0.0,
+            15.0
+          ],
+          [
+            4.92,
+            0.0,
+            15.87
+          ],
+          [
+            4.7,
+            0.0,
+            16.71
+          ],
+          [
+            4.33,
+            0.0,
+            17.5
+          ],
+          [
+            3.83,
+            0.0,
+            18.21
+          ],
+          [
+            3.21,
+            0.0,
+            18.83
+          ],
+          [
+            2.5,
+            0.0,
+            19.33
+          ],
+          [
+            1.71,
+            0.0,
+            19.7
+          ],
+          [
+            0.87,
+            0.0,
+            19.92
+          ],
+          [
+            0.0,
+            0.0,
+            20.0
+          ],
+          [
+            -0.87,
+            0.0,
+            19.92
+          ],
+          [
+            -1.71,
+            0.0,
+            19.7
+          ],
+          [
+            -2.5,
+            0.0,
+            19.33
+          ],
+          [
+            -3.21,
+            0.0,
+            18.83
+          ],
+          [
+            -3.83,
+            0.0,
+            18.21
+          ],
+          [
+            -4.33,
+            0.0,
+            17.5
+          ],
+          [
+            -4.7,
+            0.0,
+            16.71
+          ],
+          [
+            -4.92,
+            0.0,
+            15.87
+          ],
+          [
+            -5.0,
+            0.0,
+            15.0
+          ],
+          [
+            -4.92,
+            0.0,
+            14.13
+          ],
+          [
+            -4.7,
+            0.0,
+            13.29
+          ],
+          [
+            -4.33,
+            0.0,
+            12.5
+          ],
+          [
+            -3.83,
+            0.0,
+            11.79
+          ],
+          [
+            -3.21,
+            0.0,
+            11.17
+          ],
+          [
+            -2.5,
+            0.0,
+            10.67
+          ],
+          [
+            -1.71,
+            0.0,
+            10.3
+          ],
+          [
+            -0.87,
+            0.0,
+            10.08
+          ],
+          [
+            0.0,
+            0.0,
+            10.0
+          ],
+          [
+            0.87,
+            0.0,
+            10.08
+          ],
+          [
+            1.71,
+            0.0,
+            10.3
+          ],
+          [
+            2.5,
+            0.0,
+            10.67
+          ],
+          [
+            3.21,
+            0.0,
+            11.17
+          ],
+          [
+            3.83,
+            0.0,
+            11.79
+          ],
+          [
+            4.33,
+            0.0,
+            12.5
+          ],
+          [
+            4.7,
+            0.0,
+            13.29
+          ],
+          [
+            4.92,
+            0.0,
+            14.13
+          ],
+          [
+            5.0,
+            0.0,
+            15.0
+          ]
+        ]
+      },
+      "dependency": [
+        "sub_004"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_006",
+      "type": "hover",
+      "params": {
+        "duration": "5秒[自拟]"
+      },
+      "dependency": [
+        "sub_005"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_007",
+      "type": "return_to_launch",
+      "params": {},
+      "dependency": [
+        "sub_006"
+      ],
+      "priority": 1
+    },
+    {
+      "subtask_id": "sub_008",
+      "type": "land",
+      "params": {},
+      "dependency": [
+        "sub_007"
+      ],
+      "priority": 1
+    }
+  ],
+  "ambiguity_check": "无歧义（用户允许自拟参数；默认采用本地坐标系ENU，圆心为起飞点正上方；竖直圆为X-Z平面，Y=0恒定）",
+  "safety_check": "无风险（高度范围10-20米，均在0.1-50米内；半径5-6米；默认低速2m/s）",
+  "self_defined_params": [
+    "takeoff_height:15米[自拟]",
+    "goto_target:起飞点正上方圆心(0,0,15)[自拟]",
+    "goto_height:15米[自拟]",
+    "goto_speed:2m/s[自拟]",
+    "horizontal_circle_radius:6米[自拟]",
+    "horizontal_circle_num_points:36[自拟]",
+    "horizontal_circle_height:15米[自拟]",
+    "hover_duration:5秒[自拟]",
+    "vertical_circle_plane:X-Z平面(Y=0)[自拟]",
+    "vertical_circle_center:(0,0,15)[自拟]",
+    "vertical_circle_radius:5米[自拟]",
+    "vertical_circle_num_points:37[自拟]"
+  ]
+}
