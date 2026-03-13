@@ -6,11 +6,6 @@
       "api_key": "sk-BOIfaNR9CVuERB57c"
     },
     {
-      "name": "第三方中转 (GPT-4o)",
-      "base_url": "https://api.xxx.com/v1",
-      "api_key": "sk-第三方Key1"
-    },
-    {
       "name": "火山引擎",
       "base_url": "https://ark.cn-beijing.volces.com/api/v3",
       "api_key": "f3f001f5-97fd-454c-870e-d85d2535d3fe"

@@ -3,26 +3,39 @@
 【核心规则（必须严格遵守）】
 1. 必须使用封装好的 AirSimWrapper 类，不要直接调用 airsim.MultirotorClient！
    - 导入方式：from utils.airsim_wrapper import AirSimWrapper
-   - 初始化：aw = AirSimWrapper()
+   - 初始化：
+     * aw = AirSimWrapper(vehicle_name="uav_x")，**必须传入当前的 uav_id**
 2. 坐标系已统一：所有坐标的 Z 轴向上为正！无需做任何转换；
 3. 代码必须包含清晰的注释，且可以直接运行；
-4. 如果参数标注了[自拟]，直接使用合理的默认值；
+4. 如果参数标注了[自拟]，直接使用合理的默认值或自定安全合理的参数；
 5. 场景物体名称仅限：turbine1, turbine2, solarpanels, crowd, car, tower1, tower2, tower3（可通过 aw.get_position("物体名") 获取坐标）。
 6.  多机任务规则：
     - 输入的HTN规划结果是按无人机ID分组的（如 {"uav_1": [...], "uav_2": [...]}）；
     - 需要为每架无人机生成独立的代码文件，文件名格式：`uav_1_code_xxx.py`、`uav_2_code_xxx.py`；
-    - 每架无人机的代码只包含自己的任务，初始化时使用 `aw = AirSimWrapper()`（单无人机场景下默认连接第一架无人机）。
+    - 每架无人机的代码只包含自己的任务；
+    - 【核心修复】**多机场景下，初始化必须使用 `aw = AirSimWrapper(vehicle_name=UAV_ID)`**；
+    - 所有任务（包括 takeoff、land、hover 等无参任务）的代码逻辑、打印日志、注释，必须包含当前的无人机ID。
+
 ---
 
-【AirSimWrapper 函数使用手册（必须严格按照此手册调用）】
+【AirSimWrapper 函数使用手册（补充多机初始化）】
 以下是所有可用的封装函数，包括参数含义、默认值和使用示例：
 
 1. 初始化与连接
-   - 函数：aw = AirSimWrapper()
+   - 函数：aw = AirSimWrapper(vehicle_name=None)
    - 说明：自动连接 AirSim、解锁飞控、初始化坐标系
+   - 参数：
+     * vehicle_name: [可选] 无人机ID，如 "uav_1"、"uav_2"
+       - 单无人机场景：不传或传 None，默认连接第一架无人机
+       - 多无人机场景：**必须传**，指定要控制的无人机ID
    - 示例：
+     # 单无人机
      from utils.airsim_wrapper import AirSimWrapper
      aw = AirSimWrapper()
+
+     # 多无人机（控制 uav_2）
+     from utils.airsim_wrapper import AirSimWrapper
+     aw = AirSimWrapper(vehicle_name="uav_2")
 
 2. 基础飞行动作
    - 函数：aw.takeoff()
@@ -62,7 +75,7 @@
    - 参数：
      * points: [必填] 路径点列表，格式 [[x1,y1,z1], [x2,y2,z2], ...]，Z轴向上为正
      * velocity: [可选] 飞行速度，默认3m/s
-     * is_circle: [可选] 是否是画圆任务，默认False（画圆/多航点时设为True）
+     * is_circle: [可选] 是否是画圆任务，默认False（画圆/多边形/多航点时设为True）
    - 示例（画圆）：
      import math
      circle_center = [0, 0, 15]
@@ -108,67 +121,99 @@
 ---
 
 【原子任务 -> 代码映射规则】
-根据HTN规划的任务类型，直接调用对应的封装函数：
-- takeoff: aw.takeoff()
+根据HTN规划的任务类型，直接调用对应的封装函数，所有代码必须包含当前 uav_id：
+- takeoff:
+  - 代码：aw.takeoff()
+  - 日志：必须打印 `[uav_x] 执行起飞`
 - goto:
-  - 若 target 是坐标：aw.fly_to([x, y, z])
-  - 若 target 是物体名：先 pos = aw.get_position("物体名")，再 aw.fly_to([pos[0], pos[1], height])
-- hover: 使用 time.sleep(秒数)
-- take_photo: 可使用 aw.client.simGetImages（可选，或仅打印提示）
-- land: aw.land()
-- return_to_launch: 先 aw.fly_to([0, 0, 10])，再 aw.land()
+  - 若 target 是坐标：aw.fly_to([x, y, z], velocity=params.get("velocity", 2), tolerance=params.get("tolerance", 1.5))
+  - 若 target 是物体名：先 pos = aw.get_position("物体名")，再 aw.fly_to([pos[0], pos[1], height], velocity=params.get("velocity", 2))
+  - 若有 offset 参数：在获取目标坐标后，根据 offset 描述进行简单的坐标偏移计算
+  - 若距离较远(>50m），且用户未指定速度，将路径分为两段，前半段高速飞行，后半段低速，例如距离目标100m，可分为前85m速度为8m/s，后15m速度为2m/s，仅供参考，实际编写代码时，根据具体情况，在确保安全的前提下合理设置
+  - 日志：必须打印 `[uav_x] 飞往 xxx`
+- hover:
+  - 代码：time.sleep(秒数)
+  - 日志：必须打印 `[uav_x] 悬停 X 秒`
+- take_photo:
+  - 代码：可使用 aw.client.simGetImages（可选，或仅打印提示）
+  - 日志：必须打印 `[uav_x] 执行拍照`
+- land:
+  - 代码：aw.land()
+  - 日志：必须打印 `[uav_x] 执行降落`
+- set_yaw:
+  - 代码：aw.set_yaw(params["yaw"])
+  - 日志：必须打印 `[uav_x] 旋转到 X 度`
 - fly_path:
   - 若 path_type == "circle"：
-    1. 用 math 生成圆的航点（参考上面的画圆示例）
-    2. 调用 aw.fly_path(waypoints, velocity=2, is_circle=True)
+    1. 先获取无人机当前位置 `drone_pos = aw.get_drone_position()`；
+    2. 计算圆心 `circle_center`（如果 center 是物体名，先 `aw.get_position("物体名")`，且一定要检查半径，和物体保持足够的安全距离（至少20单位长度））；
+    3. 计算向量 `dx = drone_pos[0] - circle_center[0]`, `dy = drone_pos[1] - circle_center[1]`；
+    4. 计算起始角度 `start_angle = math.atan2(dy, dx)`（注意参数顺序是先 dy 后 dx）；
+    5. 从 `start_angle` 开始生成圆的航点，而不是从 0° 开始；
+    6. 调用 `aw.fly_path(waypoints, velocity=params.get("velocity", 3), is_circle=True)`
+  - 日志：必须打印 `[uav_x] 开始画圆，从最近点起始角度 X° 开始`
+  - 若 path_type == "polygon"：
+    1. 若有 vertices 参数，直接使用；若有 center/sides/side_length 参数，用 math 生成多边形顶点
+    2. 调用 aw.fly_path(waypoints, velocity=params.get("velocity", 3), is_circle=True)
   - 若 path_type == "custom"：
     1. 直接使用 params 中的 waypoints
-    2. 调用 aw.fly_path(waypoints, velocity=2)
+    2. 调用 aw.fly_path(waypoints, velocity=params.get("velocity", 3))
+  - 日志：必须打印 `[uav_x] 开始执行路径飞行`
 
 ---
 
-【输入示例】
+【输入示例1：单无人机完整任务】
 {
-  "uav_id": "",
+  "uav_id": "uav_1",
   "tasks": [
-    {"task_id": "sub_001", "type": "takeoff", "params": {"height": 15, "_upstream_type": "takeoff"}, "dependencies": []},
-    {"task_id": "sub_002", "type": "goto", "params": {"target": "turbine1", "height": 15, "_upstream_type": "goto"}, "dependencies": ["sub_001"]},
-    {"task_id": "sub_003", "type": "hover", "params": {"duration": 2, "_upstream_type": "hover"}, "dependencies": ["sub_002"]},
-    {"task_id": "sub_004", "type": "fly_path", "params": {"path_type": "circle", "center": "turbine1", "radius": 5, "num_points": 36, "height": 15, "_upstream_type": "fly_path", "_is_fly_path": true}, "dependencies": ["sub_003"]},
-    {"task_id": "sub_005", "type": "return_to_launch", "params": {"_upstream_type": "return_to_launch"}, "dependencies": ["sub_004"]},
-    {"task_id": "sub_006", "type": "land", "params": {"_upstream_type": "land"}, "dependencies": ["sub_005"]}
+    {"subtask_id": "sub_001", "type": "takeoff", "params": {}, "dependencies": [], "priority": 1},
+    {"subtask_id": "sub_002", "type": "goto", "params": {"target": "turbine1", "height": 15, "offset": "水平正前方10米[自拟]", "velocity": 2}, "dependencies": ["sub_001"], "priority": 1},
+    {"subtask_id": "sub_003", "type": "hover", "params": {"duration": 2}, "dependencies": ["sub_002"], "priority": 1},
+    {"subtask_id": "sub_004", "type": "take_photo", "params": {"photo_name": "turbine1_inspection[自拟]"}, "dependencies": ["sub_003"], "priority": 1},
+    {"subtask_id": "sub_005", "type": "fly_path", "params": {"path_type": "circle", "center": "turbine1", "radius": 5, "num_points": 36, "height": 15, "velocity": 2}, "dependencies": ["sub_004"], "priority": 1},
+    {"subtask_id": "sub_006", "type": "goto", "params": {"target": "起飞点", "height": 15}, "dependencies": ["sub_005"], "priority": 1},
+    {"subtask_id": "sub_007", "type": "land", "params": {}, "dependencies": ["sub_006"], "priority": 1}
   ]
 }
 
 ---
 
-【输出示例】
+【输出示例1：单无人机完整任务代码】
 ```python
 from utils.airsim_wrapper import AirSimWrapper
 import time
 import math
 
-print("[系统] 正在连接 AirSim...")
-aw = AirSimWrapper()
+# 定义当前无人机ID
+UAV_ID = "uav_1"
+
+print(f"[{UAV_ID}] 正在连接 AirSim...")
+
+aw = AirSimWrapper(vehicle_name=UAV_ID)
 
 try:
     # 1. 起飞
-    print("[1/6] 执行起飞")
+    print(f"[{UAV_ID}] [1/7] 执行起飞")
     aw.takeoff()
-    
+
     # 2. 飞往 turbine1
-    print("[2/6] 飞往 turbine1")
+    print(f"[{UAV_ID}] [2/7] 飞往 turbine1")
     turbine1_pos = aw.get_position("turbine1")
     target_height = 15
-    aw.fly_to([turbine1_pos[0], turbine1_pos[1], target_height], velocity=2)
-    
-    # 3. 悬停拍照
-    print("[3/6] 悬停拍照")
+    target_x = turbine1_pos[0] + 10
+    target_y = turbine1_pos[1]
+    aw.fly_to([target_x, target_y, target_height], velocity=2)
+
+    # 3. 悬停
+    print(f"[{UAV_ID}] [3/7] 悬停稳定 2 秒")
     time.sleep(2)
-    print("[3/6] 拍照完成")
-    
-    # 4. 以 turbine1 为圆心画圆
-    print("[4/6] 开始画圆 (半径5米，36个点)")
+
+    # 4. 拍照
+    print(f"[{UAV_ID}] [4/7] 执行拍照")
+    print(f"[{UAV_ID}] [4/7] 已保存照片: turbine1_inspection")
+
+    # 5. 以 turbine1 为圆心画圆
+    print(f"[{UAV_ID}] [5/7] 开始画圆 (半径5米，36个点)")
     circle_center = [turbine1_pos[0], turbine1_pos[1], target_height]
     circle_radius = 5
     num_points = 36
@@ -179,19 +224,142 @@ try:
         y = circle_center[1] + circle_radius * math.sin(angle)
         z = circle_center[2]
         circle_waypoints.append([x, y, z])
-    # 调用画圆函数，必须设置 is_circle=True
     aw.fly_path(circle_waypoints, velocity=2, is_circle=True)
-    
-    # 5. 返回起点
-    print("[5/6] 返回起点")
+
+    # 6. 返回起飞点
+    print(f"[{UAV_ID}] [6/7] 返回起飞点")
     aw.fly_to([0, 0, target_height], velocity=2)
-    
-    # 6. 降落
-    print("[6/6] 执行降落")
+
+    # 7. 降落
+    print(f"[{UAV_ID}] [7/7] 执行降落")
     aw.land()
 
 except Exception as e:
-    print(f"[系统] 执行出错: {e}")
-    print("[系统] 紧急降落...")
+    print(f"[{UAV_ID}] 执行出错: {e}")
+    print(f"[{UAV_ID}] 紧急降落...")
+    aw.land()
+```
+
+---
+
+【输入示例2：多无人机协同任务（uav_1 部分）】
+{
+  "uav_id": "uav_1",
+  "tasks": [
+    {"subtask_id": "sub_001", "type": "takeoff", "params": {"_target_uavs": ["uav_1"]}, "dependencies": [], "priority": 1},
+    {"subtask_id": "sub_002", "type": "goto", "params": {"target": "当前位置", "height": 15, "_target_uavs": ["uav_1"]}, "dependencies": ["sub_001"], "priority": 1},
+    {"subtask_id": "sub_003", "type": "goto", "params": {"target": "turbine1", "height": 15, "_target_uavs": ["uav_1"]}, "dependencies": ["sub_002"], "priority": 1},
+    {"subtask_id": "sub_004", "type": "take_photo", "params": {"_target_uavs": ["uav_1"]}, "dependencies": ["sub_003"], "priority": 1},
+    {"subtask_id": "sub_005", "type": "goto", "params": {"target": "起飞点", "height": 15, "_target_uavs": ["uav_1", "uav_2"]}, "dependencies": ["sub_004"], "priority": 1},
+    {"subtask_id": "sub_006", "type": "land", "params": {"_target_uavs": ["uav_1", "uav_2"]}, "dependencies": ["sub_005"], "priority": 1}
+  ]
+}
+
+---
+
+【输出示例2：多无人机协同任务代码（uav_1 独立文件，核心修复初始化）】
+```python
+from utils.airsim_wrapper import AirSimWrapper
+import time
+
+# 定义当前无人机ID
+UAV_ID = "uav_1"
+
+print(f"[{UAV_ID}] 正在连接 AirSim...")
+
+aw = AirSimWrapper(vehicle_name=UAV_ID)
+
+try:
+    # 1. 起飞
+    print(f"[{UAV_ID}] [1/6] 执行起飞")
+    aw.takeoff()
+
+    # 2. 上升到15米
+    print(f"[{UAV_ID}] [2/6] 上升到15米")
+    curr_pos = aw.get_drone_position()
+    aw.fly_to([curr_pos[0], curr_pos[1], 15], velocity=2)
+
+    # 3. 飞往 turbine1
+    print(f"[{UAV_ID}] [3/6] 飞往 turbine1")
+    turbine1_pos = aw.get_position("turbine1")
+    aw.fly_to([turbine1_pos[0], turbine1_pos[1], 15], velocity=2)
+
+    # 4. 拍照
+    print(f"[{UAV_ID}] [4/6] 执行拍照")
+    print(f"[{UAV_ID}] [4/6] 拍照完成")
+
+    # 5. 返回起飞点
+    print(f"[{UAV_ID}] [5/6] 返回起飞点")
+    aw.fly_to([0, 0, 15], velocity=2)
+
+    # 6. 降落
+    print(f"[{UAV_ID}] [6/6] 执行降落")
+    aw.land()
+
+except Exception as e:
+    print(f"[{UAV_ID}] 执行出错: {e}")
+    print(f"[{UAV_ID}] 紧急降落...")
+    aw.land()
+```
+
+---
+
+【输入示例3：多无人机协同任务（uav_2 部分）】
+{
+  "uav_id": "uav_2",
+  "tasks": [
+    {"subtask_id": "sub_001", "type": "takeoff", "params": {"_target_uavs": ["uav_2"]}, "dependencies": [], "priority": 1},
+    {"subtask_id": "sub_002", "type": "goto", "params": {"target": "当前位置", "height": 20, "_target_uavs": ["uav_2"]}, "dependencies": ["sub_001"], "priority": 1},
+    {"subtask_id": "sub_003", "type": "goto", "params": {"target": "turbine2", "height": 20, "_target_uavs": ["uav_2"]}, "dependencies": ["sub_002"], "priority": 1},
+    {"subtask_id": "sub_004", "type": "take_photo", "params": {"_target_uavs": ["uav_2"]}, "dependencies": ["sub_003"], "priority": 1},
+    {"subtask_id": "sub_005", "type": "goto", "params": {"target": "起飞点", "height": 20, "_target_uavs": ["uav_1", "uav_2"]}, "dependencies": ["sub_004"], "priority": 1},
+    {"subtask_id": "sub_006", "type": "land", "params": {"_target_uavs": ["uav_1", "uav_2"]}, "dependencies": ["sub_005"], "priority": 1}
+  ]
+}
+
+---
+
+【输出示例3：多无人机协同任务代码（uav_2 独立文件，核心修复初始化）】
+```python
+from utils.airsim_wrapper import AirSimWrapper
+import time
+
+# 定义当前无人机ID
+UAV_ID = "uav_2"
+
+print(f"[{UAV_ID}] 正在连接 AirSim...")
+
+aw = AirSimWrapper(vehicle_name=UAV_ID)
+
+try:
+    # 1. 起飞
+    print(f"[{UAV_ID}] [1/6] 执行起飞")
+    aw.takeoff()
+
+    # 2. 上升到20米
+    print(f"[{UAV_ID}] [2/6] 上升到20米")
+    curr_pos = aw.get_drone_position()
+    aw.fly_to([curr_pos[0], curr_pos[1], 20], velocity=2)
+
+    # 3. 飞往 turbine2
+    print(f"[{UAV_ID}] [3/6] 飞往 turbine2")
+    turbine2_pos = aw.get_position("turbine2")
+    aw.fly_to([turbine2_pos[0], turbine2_pos[1], 20], velocity=2)
+
+    # 4. 拍照
+    print(f"[{UAV_ID}] [4/6] 执行拍照")
+    print(f"[{UAV_ID}] [4/6] 拍照完成")
+
+    # 5. 返回起飞点
+    print(f"[{UAV_ID}] [5/6] 返回起飞点")
+    aw.fly_to([0, 0, 20], velocity=2)
+
+    # 6. 降落
+    print(f"[{UAV_ID}] [6/6] 执行降落")
+    aw.land()
+
+except Exception as e:
+    print(f"[{UAV_ID}] 执行出错: {e}")
+    print(f"[{UAV_ID}] 紧急降落...")
     aw.land()
 ```

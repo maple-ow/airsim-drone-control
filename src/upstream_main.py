@@ -6,7 +6,8 @@ import argparse
 import time
 from openai import OpenAI
 
-# ========== 【核心修改】路径导入逻辑 ==========
+# ========== 路径导入逻辑 ==========
+
 # 因为在 src/ 子目录下，先把根目录加到 sys.path
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
