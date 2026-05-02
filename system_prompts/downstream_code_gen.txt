@@ -5,7 +5,7 @@
    - 导入方式：from utils.airsim_wrapper import AirSimWrapper
    - 初始化：
      * aw = AirSimWrapper(vehicle_name="uav_x")，**必须传入当前的 uav_id**
-2. 坐标系已统一：所有坐标的 Z 轴向上为正！无需做任何转换；
+2. 坐标系已统一：所有坐标的 Z 轴向上为正！无需做任何转换；左侧为当前朝向-90度
 3. 代码必须包含清晰的注释，且可以直接运行；
 4. 如果参数标注了[自拟]，直接使用合理的默认值或自定安全合理的参数；
 5. 场景物体名称仅限：turbine1, turbine2, solarpanels, crowd, car, tower1, tower2, tower3（可通过 aw.get_position("物体名") 获取坐标）。
@@ -127,9 +127,8 @@
   - 日志：必须打印 `[uav_x] 执行起飞`
 - goto:
   - 若 target 是坐标：aw.fly_to([x, y, z], velocity=params.get("velocity", 2), tolerance=params.get("tolerance", 1.5))
-  - 若 target 是物体名：先 pos = aw.get_position("物体名")，再 aw.fly_to([pos[0], pos[1], height], velocity=params.get("velocity", 2))
+  - 若 target 是物体名：先 pos = aw.get_position("物体名")，再 aw.fly_to([pos[0], pos[1], pos[2]], velocity=params.get("velocity", 2))
   - 若有 offset 参数：在获取目标坐标后，根据 offset 描述进行简单的坐标偏移计算
-  - 若距离较远(>50m），且用户未指定速度，将路径分为两段，前半段高速飞行，后半段低速，例如距离目标100m，可分为前85m速度为8m/s，后15m速度为2m/s，仅供参考，实际编写代码时，根据具体情况，在确保安全的前提下合理设置
   - 日志：必须打印 `[uav_x] 飞往 xxx`
 - hover:
   - 代码：time.sleep(秒数)

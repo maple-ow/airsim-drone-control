@@ -239,7 +239,7 @@ class AirSimWrapper:
 
                 # 获取位置并统一 Z 轴向上
                 pose = self.client.simGetObjectPose(object_names_ue[0])
-                return [pose.position.x_val, pose.position.y_val, -pose.position.z_val]
+                return [pose.position.x_val, pose.position.y_val, pose.position.z_val]
             except:
                 # 如果搜索失败，fallback 到直接获取
                 pass
@@ -247,7 +247,7 @@ class AirSimWrapper:
         # 2. 兼容逻辑：如果不在字典里或搜索失败，尝试直接用名字获取
         try:
             pose = self.client.simGetObjectPose(object_name)
-            return [pose.position.x_val, pose.position.y_val, -pose.position.z_val]
+            return [pose.position.x_val, pose.position.y_val, pose.position.z_val]
         except Exception as e:
             raise ValueError(f"无法获取物体 {object_name} 的位置: {e}")
 

@@ -209,7 +209,7 @@ def get_model_list(selected_api, mode="upstream"):
         client = OpenAI(api_key=selected_api["api_key"], base_url=selected_api["base_url"])
         models = client.models.list()
         model_filter = ["gpt", "qwen", "claude", "llama"] if mode == "upstream" else ["gpt", "qwen", "codex"]
-        model_ids = [m.id for m in models.data if any(key in m.id for key in model_filter)]
+        model_ids = [m.id for m in models.data if 1 ]
         return sorted(model_ids)
     except Exception as e:
         print(f"❌ 获取模型列表失败，将使用默认模型")
