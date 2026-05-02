@@ -218,7 +218,7 @@ class AirSimWrapper:
         """
         pose = self.client.simGetVehiclePose(vehicle_name=self.vehicle_name)
         # AirSim 原生 Z 轴向下，转换为 Z 轴向上
-        return [pose.position.x_val, pose.position.y_val, -pose.position.z_val]
+        return [pose.position.x_val, pose.position.y_val, pose.position.z_val]
 
     def get_position(self, object_name: str) -> List[float]:
         """
@@ -239,7 +239,7 @@ class AirSimWrapper:
 
                 # 获取位置并统一 Z 轴向上
                 pose = self.client.simGetObjectPose(object_names_ue[0])
-                return [pose.position.x_val, pose.position.y_val, -pose.position.z_val]
+                return [pose.position.x_val, pose.position.y_val, pose.position.z_val]
             except:
                 # 如果搜索失败，fallback 到直接获取
                 pass
@@ -247,23 +247,51 @@ class AirSimWrapper:
         # 2. 兼容逻辑：如果不在字典里或搜索失败，尝试直接用名字获取
         try:
             pose = self.client.simGetObjectPose(object_name)
-            return [pose.position.x_val, pose.position.y_val, -pose.position.z_val]
+            return [pose.position.x_val, pose.position.y_val, pose.position.z_val]
         except Exception as e:
             raise ValueError(f"无法获取物体 {object_name} 的位置: {e}")
 
     # ==================== 拍照功能 ====================
-    def take_photo(self, camera_name: str = "0", image_type: airsim.ImageType = airsim.ImageType.Scene):
+    def save_photo(self, save_dir: str = "drone_photos", camera_name: str = "0", filename: str = None):
         """
-        拍照并返回图像数据
-        :param camera_name: 相机名称，默认 "0"（前视相机）
-        :param image_type: 图像类型，默认 Scene（可见光）
-        :return: 图像数据
+        调用 AirSim API 拍照并直接保存为本地 PNG 文件
+        :param save_dir: 保存目录，默认保存在 "drone_photos" 文件夹中
+        :param camera_name: 相机名称，默认 "0" (前视相机)
+        :param filename: 自定义文件名。如果不传，则自动生成带时间戳的文件名
+        :return: 保存的完整文件路径
         """
-        self._log(f"执行拍照（相机 {camera_name}）")
+        import os
+        import datetime
+
+        # 确保保存目录存在
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+
+        # 自动生成文件名 (例如: uav_1_20240315_120530.png)
+        if filename is None:
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            uav_prefix = self.vehicle_name if self.vehicle_name else "drone"
+            filename = f"{uav_prefix}_{timestamp}.png"
+
+        filepath = os.path.join(save_dir, filename)
+        self._log(f"正在调用 API 拍照并保存至 {filepath} ...")
+
+        # 核心：使用 compress=True，获取可直接写入文件的 png 字节数据
         responses = self.client.simGetImages(
-            [airsim.ImageRequest(camera_name, image_type, pixels_as_float=False, compress=False)],
+            [airsim.ImageRequest(camera_name, airsim.ImageType.Scene, pixels_as_float=False, compress=True)],
             vehicle_name=self.vehicle_name
         )
-        if responses:
-            return responses[0]
-        return None
+
+        if responses and len(responses) > 0:
+            try:
+                # 以二进制写入模式保存图片
+                with open(filepath, 'wb') as f:
+                    f.write(responses[0].image_data_uint8)
+                self._log(f"✅ 照片保存成功: {filepath}")
+                return filepath
+            except Exception as e:
+                self._log(f"❌ 照片保存失败: {e}")
+                return None
+        else:
+            self._log("❌ 拍照失败，未获取到图像数据")
+            return None

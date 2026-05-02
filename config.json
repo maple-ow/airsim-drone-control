@@ -9,6 +9,11 @@
       "name": "火山引擎",
       "base_url": "https://ark.cn-beijing.volces.com/api/v3",
       "api_key": "f3f001f5-97fd-454c-870e-d85d2535d3fe"
+    },
+    {
+      "name": "智谱",
+      "base_url": "https://open.bigmodel.cn/api/paas/v4/",
+      "api_key": "bafaee0861c94f2985761608487cb9c0.v7Koon7sUbwN4bVb"
     }
   ]
 }

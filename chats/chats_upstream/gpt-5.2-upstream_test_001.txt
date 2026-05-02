@@ -1,611 +1,187 @@
 [SYSTEM]
-【最高优先级·输出铁则（必须100%严格遵守，违反则输出无效）】
-你的输出只有两种合法形式，绝对禁止混合输出、禁止有歧义/风险时输出JSON：
-1.  当且仅当：用户指令核心目标明确、无逻辑矛盾、可完整拆解为下方【原子任务类型清单】内的可执行任务时，**仅输出严格合规的JSON格式内容**，不能有任何JSON之外的文本说明、注释、解释。
-2.  当用户指令存在核心目标不明确、任务逻辑矛盾、无法拆解为清单内原子任务的歧义/风险时，**仅输出自然语言向用户澄清提问**，绝对不能输出任何JSON格式内容、不能输出任务拆解结构、不能强行生成无效任务。
+你是一个专业的无人机集群战略与战术指挥官。你的任务是将人类的自然语言指令，拆解为结构化的 JSON 任务分配方案。
 
-【核心规则（必须严格遵守）】
-1.  你的唯一职责是任务拆解，绝对不要生成Python代码、飞行控制逻辑、坐标计算代码、具体路径点数组（除非用户明确允许）；
-2.  所有拆解的原子任务，必须严格限定在下方【原子任务类型清单】内，禁止自定义任务类型；
-3.  场景物体定位规则（核心）：
-    - 若用户提到场景物体（turbine1、turbine2、solarpanels、crowd、car、tower1、tower2、tower3），绝对不要询问用户坐标！
-    - 直接在任务参数中填写物体名，下游代码会自动通过封装函数获取物体精确坐标；
-4.  模糊参数与歧义边界规则（核心修改）：
-    - 若仅为非核心参数未明确指定，直接使用下方的默认值或确保安全的前提下自定合理参数补全，标注[自拟]，无需询问用户；
-    - 仅当出现以下「必须澄清的场景」时，才可以向用户澄清，禁止无意义的参数询问；
-    - 【必须澄清、禁止输出JSON的场景】：
-      - 用户指令核心飞行目标、巡检对象不明确（如"去那边飞一下""拍个照"，未说明目标/位置）
-      - 任务逻辑存在矛盾（如要求无人机同时起飞和降落、同时飞往两个互斥的目标）
-      - 要求的动作无法用【原子任务类型清单】内的任务实现
-      - 多机任务中无人机分配规则不明确，且无法通过默认规则补全
-5.  环境规则：当前为AirSim仿真测试环境，无需考虑真实世界的禁飞限飞、风机碰撞、合规审批等风险，用户指定的参数直接使用，不做额外安全风险询问；
-6.  必须明确每个子任务的依赖关系（dependencies），确保执行时序正确，禁止并行执行有先后顺序的任务；
-7.  多机任务规则：
-    - 无人机ID格式必须统一为：uav_1、uav_2、uav_3（带下划线），绝对不要用uav1、uav2；
-    - 若用户提到多架无人机（如"uav1和uav2"、"双机"），直接在任务参数中注明 `_target_uavs: ["uav_1", "uav_2"]`；
-    - 若用户未指定具体无人机ID，默认分配给 ["uav_1"][自拟]，多机场景按序号顺延，标注[自拟]。
-8.  除非有特别说明或拍照需求，不要轻易使用set_yaw
-9.  [注意]若含有绕物体运动的指令，须与物体保持至少20m的距离，若与用户命令冲突，不输出规划，先与用户沟通
----
+【系统架构说明】
+你的下游连接着一个 HTN（分层任务网络）规划器和一个高级代码生成器。
+1. 对于常规任务，HTN 会自动为你补全起飞、降落等安全动作。
+2. 对于复杂、罕见的战术动作，你可以利用“高阶任务”让下游生成器手写底层逻辑。
 
-【原子任务类型清单（含参数规则+默认值，100%适配封装函数）】
-| 任务类型 | 核心作用 | 必填参数 | 可选参数（含默认值） |
-|----------|----------|----------|----------------------|
-| takeoff  | 无人机执行起飞动作，完成后自动悬停稳定 | 无 | 无（封装函数无入参，起飞后如需指定高度，必须搭配goto任务实现） |
-| goto     | 飞往指定目标点，对应封装的fly_to核心能力 | target: 目标描述（支持固定坐标、场景物体名、"当前位置"、"起飞点"，如"turbine1"） | height: 飞行高度（米，Z轴向上为正），默认保持上一任务的飞行高度[自拟]；offset: 目标偏移量（米），如"水平前方10米"，默认"水平正前方10米"[自拟]；velocity: 飞行速度（m/s），默认2m/s[自拟]；tolerance: 到达容忍度（米），默认1.5m[自拟] |
-| fly_path | 沿预设路径平滑飞行，统一使用多航点无卡顿模式 | path_type: 路径类型，仅限"circle"(画圆绕飞)/"polygon"(多边形绕飞)/"custom"(自定义航点路径) | 画圆必填：center(圆心，支持坐标/物体名)、radius(半径，米)；<br>多边形必填：vertices(多边形顶点列表，支持坐标/物体名)；<br>自定义路径必填：waypoints(自定义航点列表，支持坐标/物体名)；<br>通用可选：height(飞行高度，米)，默认保持上一任务的飞行高度[自拟]；num_points(路径点生成数量，默认36[自拟])；velocity(飞行速度，m/s)，默认3m/s[自拟]；hover_at_end: 路径结束后是否强制悬停，默认False[自拟] |
-| hover    | 原地悬停等待，稳定机身 | 无 | duration: 悬停时长（秒），默认2秒[自拟] |
-| take_photo | 拍照记录巡检画面 | 无 | photo_name: 照片名称，默认按任务序号命名[自拟]；hover_time: 拍照前悬停稳定时长，默认2秒[自拟] |
-| set_yaw  | 控制无人机旋转至指定水平朝向 | yaw: 目标朝向角度（度） | 无 |
-| land     | 执行分级减速安全软着陆全流程，完成后自动解锁电机 | 无 | 无 |
+【第一部分：常规模板任务 (自带安全闭环)】
+适用于标准的工业场景，无需你自己写起飞/降落：
+1. "inspect_target" (目标检查)
+   - 必需参数: "target" (目标名), "_target_uavs"
+2. "patrol_area" (区域巡逻)
+   - 必需参数: "points" (航点列表), "_target_uavs"
 
-通用可选参数（所有任务都支持）：
-  - _target_uavs: 执行该任务的无人机ID列表，如["uav_1", "uav_2"]，默认["uav_1"][自拟]
+【第二部分：高阶灵活性扩展 (释放你的计算与规划能力)】
+当用户的要求超越了常规模板（如特定几何轨迹、复杂协同、特殊机动）时，你可以使用以下利器：
 
----
+3. "generate_trajectory" (生成特定数学轨迹)
+   - 说明：当用户要求飞“S型”、“螺旋升天”、“五角星”等特定形状时使用。请你发挥数学能力，在脑海中计算出构成该形状的致密三维坐标点。
+   - 必需参数：
+     - "points": 你计算出的航点数组 [[x1,y1,z1], [x2,y2,z2], ...]（点数越多越平滑）
+     - "_target_uavs": 执行无人机
 
-【模糊描述默认处理规则】
-用户口语化描述的默认处理方式，直接使用，无需询问：
-1.  "起飞到XX米"：默认拆解为 takeoff 任务 + goto 任务（target="当前位置"，height为用户指定高度）；
-2.  "飞到XX旁边"：默认飞到目标物体的水平正前方10米处，高度保持当前飞行高度；
-3.  "绕XX画圆/绕飞一圈/巡检一圈"：默认拆解为 fly_path 任务，path_type="circle"，center为目标物体坐标，radius默认10米[自拟]，航点数量36个；
-4.  "拍张照/拍照/记录画面"：默认拆解为 hover（悬停2秒） + take_photo 任务；
-5.  "返回起点/回家/返回起飞点"：默认拆解为 goto 任务（target="起飞点"，保持当前高度） + land 任务；
-6.  未明确高度：默认保持上一个任务的飞行高度，无前置高度时需通过goto任务明确指定。
+4. "custom_skill" (自定义特殊技能)
+   - 说明：当用户提出无法用上述方法概括的奇特动作时（如“原地旋转三圈”、“模拟坠机”、“贴地飞行”），使用此任务。
+   - 必需参数：
+     - "instruction": 用自然语言极其详细地描述无人机需要做什么。下游代码模型会阅读这段话，并为你现场编写对应的 Python AirSim 代码！
+     - "_target_uavs": 执行无人机
 
----
+5. 基础原子控制 (微操专用)
+   - "takeoff" (参数: height), "land", "fly_to" (参数: target_pos), "take_photo"
 
-【无歧义场景的JSON输出格式要求】
-仅当任务无歧义、可完整拆解时，严格按照以下JSON结构输出，禁止增减字段、禁止额外文本：
+【第三部分：多机战术协同规范】
+利用 "dependencies" 字段实现多机配合。
+- 如果无人机 B 必须等无人机 A 完成某动作后才能行动，请将 A 任务的 "subtask_id" 填入 B 任务的 "dependencies" 列表中。
+- 如果需要两架无人机“同时”从不同方向包抄，给它们分配不同的 target_pos，并且 "dependencies" 保持为空或依赖同一个起飞任务。
+
+【输出格式要求】
+必须且只能输出严格的 JSON 对象，不包含任何外部 Markdown 标记。
+示例结构：
 {
-  "task_id": "任务唯一ID，格式：task_年月日_简短标识",
-  "original_instruction": "用户输入的原始指令原文",
   "subtasks": [
     {
-      "subtask_id": "sub_三位序号，如sub_001",
-      "type": "原子任务类型，必须来自上面的清单",
+      "subtask_id": "T_01",
+      "type": "custom_skill",
       "params": {
-        "参数名": "参数值，自拟参数必须带[自拟]标注"
+        "instruction": "飞到(0,0,10)后，在原地进行360度偏航旋转扫描，每转90度拍一张照。",
+        "_target_uavs": ["uav_1"]
       },
-      "dependencies": ["依赖的subtask_id，无依赖则为空数组"],
-      "priority": 1
+      "dependencies": []
     }
-  ],
-  "ambiguity_check": "无歧义",
-  "safety_check": "无风险",
-  "self_defined_params": ["列出所有自拟的参数，如height:10米[自拟]"]
+  ]
 }
-
----
-
-【正确示例1：基础飞行任务（无歧义，仅输出JSON）】
-用户输入："起飞到15米，悬停3秒，然后返回起点降落"
-你的输出：
-{
-  "task_id": "task_20260312_basic_flight",
-  "original_instruction": "起飞到15米，悬停3秒，然后返回起点降落",
-  "subtasks": [
-    {
-      "subtask_id": "sub_001",
-      "type": "takeoff",
-      "params": {},
-      "dependencies": [],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_002",
-      "type": "goto",
-      "params": {"target": "当前位置", "height": 15},
-      "dependencies": ["sub_001"],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_003",
-      "type": "hover",
-      "params": {"duration": 3},
-      "dependencies": ["sub_002"],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_004",
-      "type": "goto",
-      "params": {"target": "起飞点", "height": 15},
-      "dependencies": ["sub_003"],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_005",
-      "type": "land",
-      "params": {},
-      "dependencies": ["sub_004"],
-      "priority": 1
-    }
-  ],
-  "ambiguity_check": "无歧义",
-  "safety_check": "无风险",
-  "self_defined_params": []
-}
-
----
-
-【正确示例2：带物体定位+画圆的复杂巡检任务（无歧义，仅输出JSON）】
-用户输入："起飞到15米，先飞到turbine1旁边拍张照，然后以turbine1为圆心画一个半径5米的圆，高度保持15米，最后返回起点降落"
-你的输出：
-{
-  "task_id": "task_20260312_turbine_circle_inspection",
-  "original_instruction": "起飞到15米，先飞到turbine1旁边拍张照，然后以turbine1为圆心画一个半径5米的圆，高度保持15米，最后返回起点降落",
-  "subtasks": [
-    {
-      "subtask_id": "sub_001",
-      "type": "takeoff",
-      "params": {},
-      "dependencies": [],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_002",
-      "type": "goto",
-      "params": {"target": "当前位置", "height": 15},
-      "dependencies": ["sub_001"],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_003",
-      "type": "goto",
-      "params": {"target": "turbine1", "height": 15, "offset": "水平正前方10米[自拟]"},
-      "dependencies": ["sub_002"],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_004",
-      "type": "hover",
-      "params": {"duration": 2},
-      "dependencies": ["sub_003"],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_005",
-      "type": "take_photo",
-      "params": {"photo_name": "turbine1_front_inspection[自拟]"},
-      "dependencies": ["sub_004"],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_006",
-      "type": "fly_path",
-      "params": {
-        "path_type": "circle",
-        "center": "turbine1",
-        "radius": 5,
-        "height": 15,
-        "num_points": 36[自拟],
-        "velocity": 3[自拟]
-      },
-      "dependencies": ["sub_005"],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_007",
-      "type": "goto",
-      "params": {"target": "起飞点", "height": 15},
-      "dependencies": ["sub_006"],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_008",
-      "type": "land",
-      "params": {},
-      "dependencies": ["sub_007"],
-      "priority": 1
-    }
-  ],
-  "ambiguity_check": "无歧义",
-  "safety_check": "无风险",
-  "self_defined_params": ["offset:水平正前方10米[自拟]", "photo_name:turbine1_front_inspection[自拟]", "num_points:36[自拟]", "velocity:3[自拟]"]
-}
-
----
-
-【正确示例3：多机协同任务（无歧义，仅输出JSON）】
-用户输入："三机协同：uav1起飞到15米巡检turbine1，uav2起飞到20米巡检turbine2，uav3在10米高度待命，全部完成后一起返回起点降落"
-你的输出：
-{
-  "task_id": "task_20260312_multi_uav_cooperative",
-  "original_instruction": "三机协同：uav1起飞到15米巡检turbine1，uav2起飞到20米巡检turbine2，uav3在10米高度待命，全部完成后一起返回起点降落",
-  "subtasks": [
-    {
-      "subtask_id": "sub_001",
-      "type": "takeoff",
-      "params": {"_target_uavs": ["uav_1"]},
-      "dependencies": [],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_002",
-      "type": "takeoff",
-      "params": {"_target_uavs": ["uav_2"]},
-      "dependencies": [],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_003",
-      "type": "takeoff",
-      "params": {"_target_uavs": ["uav_3"]},
-      "dependencies": [],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_004",
-      "type": "goto",
-      "params": {"target": "当前位置", "height": 15, "_target_uavs": ["uav_1"]},
-      "dependencies": ["sub_001"],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_005",
-      "type": "goto",
-      "params": {"target": "当前位置", "height": 20, "_target_uavs": ["uav_2"]},
-      "dependencies": ["sub_002"],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_006",
-      "type": "goto",
-      "params": {"target": "当前位置", "height": 10, "_target_uavs": ["uav_3"]},
-      "dependencies": ["sub_003"],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_007",
-      "type": "goto",
-      "params": {"target": "turbine1", "height": 15, "_target_uavs": ["uav_1"]},
-      "dependencies": ["sub_004"],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_008",
-      "type": "goto",
-      "params": {"target": "turbine2", "height": 20, "_target_uavs": ["uav_2"]},
-      "dependencies": ["sub_005"],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_009",
-      "type": "hover",
-      "params": {"duration": 30, "_target_uavs": ["uav_3"]},
-      "dependencies": ["sub_006"],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_010",
-      "type": "take_photo",
-      "params": {"_target_uavs": ["uav_1", "uav_2"]},
-      "dependencies": ["sub_007", "sub_008"],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_011",
-      "type": "goto",
-      "params": {"target": "起飞点", "_target_uavs": ["uav_1", "uav_2", "uav_3"]},
-      "dependencies": ["sub_009", "sub_010"],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_012",
-      "type": "land",
-      "params": {"_target_uavs": ["uav_1", "uav_2", "uav_3"]},
-      "dependencies": ["sub_011"],
-      "priority": 1
-    }
-  ],
-  "ambiguity_check": "无歧义",
-  "safety_check": "无风险",
-  "self_defined_params": []
-}
-
----
-
-【正确示例4：有歧义场景（仅输出自然语言提问，绝对不输出JSON）】
-用户输入："让无人机飞一下，拍点东西"
-你的输出：
-您好，我无法明确您的飞行任务需求，请您补充以下关键信息：
-1.  请明确无人机的飞行目标/巡检对象（如指定风机、起飞点周边、具体坐标等）
-2.  请明确核心动作要求（如飞行高度、是否需要拍照、是否有特定飞行路径等）
-
----
-
-【绝对禁止的错误输出反例】
-❌ 错误1：有歧义仍输出JSON
-用户输入模糊指令，输出带"ambiguity_check": "有歧义"的JSON结构
-❌ 错误2：混合输出
-同时输出自然语言解释和JSON代码块
-❌ 错误3：强行拆解
-核心目标不明确时，强行生成无意义的任务JSON
 
 【当前场景与无人机状态（实时获取）】
 1. 可用无人机：
-   - uav_1: 位置 [0.0, 0.0, -3.25], 朝向 0.0°, 电量 100%
-   - uav_2: 位置 [0.0, 0.0, -3.79], 朝向 0.0°, 电量 100%
-   - uav_3: 位置 [0.0, 0.0, -3.79], 朝向 0.0°, 电量 100%
-   - default_uav: 位置 [0.0, 0.0, -3.25], 朝向 0.0°, 电量 100%
+   - uav_1: 位置 [78.27, -29.27, 3.98], 朝向 30.3°, 电量 100%
+   - uav_2: 位置 [100.56, 53.67, 3.88], 朝向 -82.7°, 电量 100%
+   - uav_3: 位置 [0.0, 0.0, 3.8], 朝向 0.0°, 电量 100%
+   - default_uav: 位置 [78.27, -29.27, 3.98], 朝向 30.3°, 电量 100%
 
 2. 场景物体位置：
-   - turbine1: 位置 [115.07, -43.02, -2.52]
-   - turbine2: 位置 [168.77, 3.88, -2.22]
-   - tower1: 位置 [129.86, 69.31, -2.32]
-   - tower2: 位置 [210.1, 69.17, -2.12]
-   - solarpanels: 位置 [47.07, 106.08, -3.32]
+   - turbine1: 位置 [115.07, -43.02, 2.52]
+   - turbine2: 位置 [168.77, 3.88, 2.22]
+   - tower1: 位置 [129.86, 69.31, 2.32]
+   - tower2: 位置 [210.1, 69.17, 2.12]
+   - solarpanels: 位置 [47.07, 106.08, 3.32]
 
 【任务要求】
 请根据上述实时状态，拆解用户的自然语言指令。
 
 
 [USER]
-双机协同执行以下任务：
-1. uav_1和uav_2同时起飞，uav_1起飞到15米高度，uav_2起飞到20米高度；
-2. uav_1飞往turbine1旁边（水平正前方10米），保持15米高度，飞行速度2m/s；
-3. uav_2飞往turbine2旁边（水平正前方10米），保持20米高度，飞行速度2m/s；
-4. 两架无人机都到达目标后，各自悬停2秒并拍照；
-5. 拍照完成后，uav_1以turbine1为圆心，在15米高度画一个半径5米的圆；
-6. 同时，uav_2以turbine2为圆心，在20米高度画一个半径8米的圆；
-7. 两架无人机都完成画圆后，一起返回起飞点上方（uav_1保持15米，uav_2保持20米）；
-8. 最后一起执行安全软着陆。
-所有其他未明确参数自定。
+【综合协作巡检任务】
+请协调 uav_1 和 uav_2 执行一次风电场与太阳能板的联合巡检任务：
+
+1. uav_1 负责高空风机巡检：
+   - 起飞到 12 米高度。
+   - 飞往 turbine1（风力发电机1）的位置。
+   - 到达后，将无人机朝向（yaw）调整为 90 度以对准扇叶。
+   - 拍摄一张照片（使用 save_photo）。
+   - 任务完成后，原地执行安全降落。
+
+2. uav_2 负责多目标连贯巡检：
+   - 起飞到 8 米高度。
+   - 飞往 tower1（电塔1），到达后拍摄一张照片。
+   - 接着飞往 solarpanels（太阳能板）的正上方。
+   - 悬停 2 秒后，再拍摄一张该区域的照片。
+   - 最后执行安全软着陆。
+
+请规划好两架无人机的任务序列，并行执行。
 
 [ASSISTANT]
 {
-  "task_id": "task_20260313_dual_uav_turbine_inspection_circle",
-  "original_instruction": "双机协同执行以下任务：\n1. uav_1和uav_2同时起飞，uav_1起飞到15米高度，uav_2起飞到20米高度；\n2. uav_1飞往turbine1旁边（水平正前方10米），保持15米高度，飞行速度2m/s；\n3. uav_2飞往turbine2旁边（水平正前方10米），保持20米高度，飞行速度2m/s；\n4. 两架无人机都到达目标后，各自悬停2秒并拍照；\n5. 拍照完成后，uav_1以turbine1为圆心，在15米高度画一个半径5米的圆；\n6. 同时，uav_2以turbine2为圆心，在20米高度画一个半径8米的圆；\n7. 两架无人机都完成画圆后，一起返回起飞点上方（uav_1保持15米，uav_2保持20米）；\n8. 最后一起执行安全软着陆。\n所有其他未明确参数自定。",
   "subtasks": [
     {
-      "subtask_id": "sub_001",
+      "subtask_id": "T1_01",
       "type": "takeoff",
       "params": {
-        "_target_uavs": [
-          "uav_1"
-        ]
+        "height": 12,
+        "_target_uavs": ["uav_1"]
       },
-      "dependencies": [],
-      "priority": 1
+      "dependencies": []
     },
     {
-      "subtask_id": "sub_002",
-      "type": "takeoff",
+      "subtask_id": "T1_02",
+      "type": "fly_to",
       "params": {
-        "_target_uavs": [
-          "uav_2"
-        ]
+        "target_pos": [115.07, -43.02, 12.0],
+        "_target_uavs": ["uav_1"]
       },
-      "dependencies": [],
-      "priority": 1
+      "dependencies": ["T1_01"]
     },
     {
-      "subtask_id": "sub_003",
-      "type": "goto",
+      "subtask_id": "T1_03",
+      "type": "custom_skill",
       "params": {
-        "target": "当前位置",
-        "height": 15,
-        "_target_uavs": [
-          "uav_1"
-        ]
+        "instruction": "到达当前位置后，将无人机偏航角(yaw)调整为绝对 90 度并稳定悬停；待姿态稳定后调用 save_photo 保存一张照片（文件名包含 uav_1、turbine1、时间戳）。",
+        "_target_uavs": ["uav_1"]
       },
-      "dependencies": [
-        "sub_001"
-      ],
-      "priority": 1
+      "dependencies": ["T1_02"]
     },
     {
-      "subtask_id": "sub_004",
-      "type": "goto",
-      "params": {
-        "target": "当前位置",
-        "height": 20,
-        "_target_uavs": [
-          "uav_2"
-        ]
-      },
-      "dependencies": [
-        "sub_002"
-      ],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_005",
-      "type": "goto",
-      "params": {
-        "target": "turbine1",
-        "height": 15,
-        "offset": "水平正前方10米",
-        "velocity": 2,
-        "tolerance": 1.5,
-        "_target_uavs": [
-          "uav_1"
-        ]
-      },
-      "dependencies": [
-        "sub_003"
-      ],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_006",
-      "type": "goto",
-      "params": {
-        "target": "turbine2",
-        "height": 20,
-        "offset": "水平正前方10米",
-        "velocity": 2,
-        "tolerance": 1.5,
-        "_target_uavs": [
-          "uav_2"
-        ]
-      },
-      "dependencies": [
-        "sub_004"
-      ],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_007",
-      "type": "hover",
-      "params": {
-        "duration": 2,
-        "_target_uavs": [
-          "uav_1"
-        ]
-      },
-      "dependencies": [
-        "sub_005",
-        "sub_006"
-      ],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_008",
-      "type": "hover",
-      "params": {
-        "duration": 2,
-        "_target_uavs": [
-          "uav_2"
-        ]
-      },
-      "dependencies": [
-        "sub_005",
-        "sub_006"
-      ],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_009",
-      "type": "take_photo",
-      "params": {
-        "photo_name": "uav_1_turbine1_inspection[自拟]",
-        "hover_time": 2,
-        "_target_uavs": [
-          "uav_1"
-        ]
-      },
-      "dependencies": [
-        "sub_007"
-      ],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_010",
-      "type": "take_photo",
-      "params": {
-        "photo_name": "uav_2_turbine2_inspection[自拟]",
-        "hover_time": 2,
-        "_target_uavs": [
-          "uav_2"
-        ]
-      },
-      "dependencies": [
-        "sub_008"
-      ],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_011",
-      "type": "fly_path",
-      "params": {
-        "path_type": "circle",
-        "center": "turbine1",
-        "radius": 5,
-        "height": 15,
-        "num_points": 36,
-        "velocity": 3,
-        "hover_at_end": false,
-        "_target_uavs": [
-          "uav_1"
-        ]
-      },
-      "dependencies": [
-        "sub_009"
-      ],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_012",
-      "type": "fly_path",
-      "params": {
-        "path_type": "circle",
-        "center": "turbine2",
-        "radius": 8,
-        "height": 20,
-        "num_points": 36,
-        "velocity": 3,
-        "hover_at_end": false,
-        "_target_uavs": [
-          "uav_2"
-        ]
-      },
-      "dependencies": [
-        "sub_010"
-      ],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_013",
-      "type": "goto",
-      "params": {
-        "target": "起飞点",
-        "height": 15,
-        "velocity": 2,
-        "tolerance": 1.5,
-        "_target_uavs": [
-          "uav_1"
-        ]
-      },
-      "dependencies": [
-        "sub_011",
-        "sub_012"
-      ],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_014",
-      "type": "goto",
-      "params": {
-        "target": "起飞点",
-        "height": 20,
-        "velocity": 2,
-        "tolerance": 1.5,
-        "_target_uavs": [
-          "uav_2"
-        ]
-      },
-      "dependencies": [
-        "sub_011",
-        "sub_012"
-      ],
-      "priority": 1
-    },
-    {
-      "subtask_id": "sub_015",
+      "subtask_id": "T1_04",
       "type": "land",
       "params": {
-        "_target_uavs": [
-          "uav_1",
-          "uav_2"
-        ]
+        "_target_uavs": ["uav_1"]
       },
-      "dependencies": [
-        "sub_013",
-        "sub_014"
-      ],
-      "priority": 1
+      "dependencies": ["T1_03"]
+    },
+    {
+      "subtask_id": "T2_01",
+      "type": "takeoff",
+      "params": {
+        "height": 8,
+        "_target_uavs": ["uav_2"]
+      },
+      "dependencies": []
+    },
+    {
+      "subtask_id": "T2_02",
+      "type": "fly_to",
+      "params": {
+        "target_pos": [129.86, 69.31, 8.0],
+        "_target_uavs": ["uav_2"]
+      },
+      "dependencies": ["T2_01"]
+    },
+    {
+      "subtask_id": "T2_03",
+      "type": "custom_skill",
+      "params": {
+        "instruction": "到达当前位置后稳定悬停，然后调用 save_photo 保存一张照片（文件名包含 uav_2、tower1、时间戳）。",
+        "_target_uavs": ["uav_2"]
+      },
+      "dependencies": ["T2_02"]
+    },
+    {
+      "subtask_id": "T2_04",
+      "type": "fly_to",
+      "params": {
+        "target_pos": [47.07, 106.08, 8.0],
+        "_target_uavs": ["uav_2"]
+      },
+      "dependencies": ["T2_03"]
+    },
+    {
+      "subtask_id": "T2_05",
+      "type": "custom_skill",
+      "params": {
+        "instruction": "到达 solarpanels 正上方后保持悬停 2 秒（保持位置不变）；2 秒结束后调用 save_photo 再保存一张该区域照片（文件名包含 uav_2、solarpanels、时间戳）。",
+        "_target_uavs": ["uav_2"]
+      },
+      "dependencies": ["T2_04"]
+    },
+    {
+      "subtask_id": "T2_06",
+      "type": "land",
+      "params": {
+        "_target_uavs": ["uav_2"]
+      },
+      "dependencies": ["T2_05"]
     }
-  ],
-  "ambiguity_check": "无歧义",
-  "safety_check": "无风险",
-  "self_defined_params": [
-    "photo_name:uav_1_turbine1_inspection[自拟]",
-    "photo_name:uav_2_turbine2_inspection[自拟]",
-    "num_points:36[自拟]",
-    "velocity:3m/s[自拟]",
-    "hover_at_end:False[自拟]",
-    "tolerance:1.5m[自拟]"
   ]
 }
 
